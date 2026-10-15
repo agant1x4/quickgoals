@@ -5,9 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/task_models.dart';
-import 'dashboard_phone.dart';
-import 'settings.dart';
-import 'nav_drawer.dart';
 
 class PomodoroPage extends StatefulWidget {
   final List<SubjectTaskData> userSubjects;
@@ -155,7 +152,7 @@ class _PomodoroPageState extends State<PomodoroPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF1E2841),
-      endDrawer: AppMenuDrawer(userSubjects: widget.userSubjects),
+      // Removed endDrawer: AppMenuDrawer(...)
       body: SafeArea(
         child: Column(
           children: [
@@ -173,16 +170,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
-                    ),
-                  ),
-                  Builder(
-                    builder: (innerContext) => GestureDetector(
-                      onTap: () => Scaffold.of(innerContext).openEndDrawer(),
-                      child: const Icon(
-                        Icons.menu,
-                        size: 28,
-                        color: Colors.white,
-                      ),
                     ),
                   ),
                 ],
@@ -313,9 +300,10 @@ class _PomodoroPageState extends State<PomodoroPage> {
               ),
             ),
 
+            // Height constraint set to 310 to accommodate floating bottom nav bar space
             Container(
               width: double.infinity,
-              constraints: const BoxConstraints(maxHeight: 220),
+              constraints: const BoxConstraints(maxHeight: 310),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
@@ -341,9 +329,11 @@ class _PomodoroPageState extends State<PomodoroPage> {
                       )
                     : ListView(
                         physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24.0,
-                          vertical: 16.0,
+                        padding: const EdgeInsets.fromLTRB(
+                          24.0,
+                          16.0,
+                          24.0,
+                          90.0,
                         ),
                         children: [
                           if (lessons.isNotEmpty) ...[
@@ -510,13 +500,6 @@ class _PomodoroPageState extends State<PomodoroPage> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF5D7196),
                   borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Icon(
-                    _isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                    size: 16,
-                  ),
                 ),
               ),
             ),

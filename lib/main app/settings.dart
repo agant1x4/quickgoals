@@ -6,7 +6,6 @@ import 'dashboard_phone.dart';
 import 'pomodoro.dart';
 import '../models/task_models.dart';
 import '../services/moodle_service.dart';
-import 'nav_drawer.dart'; // IMPORT THE SHARED NAVIGATION COMPONENT
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -522,16 +521,14 @@ class _SettingsPageState extends State<SettingsPage> {
 
     return Scaffold(
       backgroundColor: backgroundColor,
-      // REPLACED THE DUPLICATE HARDCODED DRAWER BLOCK WITH OUR GLOBAL SYSTEM NAV_DRAWER
-      endDrawer: AppMenuDrawer(userSubjects: _subjects),
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          padding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 90.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Unified Navigation Header with drawer trigger
+              // Unified Navigation Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -570,35 +567,17 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ],
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.black, width: 2),
-                        ),
-                        child: const Icon(
-                          Icons.person_outline,
-                          size: 18,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Builder(
-                        builder: (innerContext) {
-                          return GestureDetector(
-                            onTap: () =>
-                                Scaffold.of(innerContext).openEndDrawer(),
-                            child: const Icon(
-                              Icons.menu,
-                              size: 28,
-                              color: Colors.black,
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.black, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.person_outline,
+                      size: 18,
+                      color: Colors.black,
+                    ),
                   ),
                 ],
               ),

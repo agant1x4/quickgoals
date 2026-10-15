@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task_models.dart';
-import '../widgets/geometry.dart';
-import 'nav_drawer.dart';
 
 class SubjectAnalysisItem {
   final String id;
@@ -49,8 +47,6 @@ class WeaknessTrackerScreen extends StatefulWidget {
 }
 
 class _WeaknessTrackerScreenState extends State<WeaknessTrackerScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   // QuickGoals Theme Matching Palette
   static const Color _bgCanvas = Color(0xFFF9FAFC);
   static const Color _darkText = Color(0xFF1E2841);
@@ -228,9 +224,7 @@ class _WeaknessTrackerScreenState extends State<WeaknessTrackerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: _bgCanvas,
-      endDrawer: AppMenuDrawer(userSubjects: widget.userSubjects),
       body: SafeArea(
         child: _isLoading
             ? const Center(
@@ -242,9 +236,11 @@ class _WeaknessTrackerScreenState extends State<WeaknessTrackerScreen> {
                   Expanded(
                     child: SingleChildScrollView(
                       physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20.0,
-                        vertical: 12.0,
+                      padding: const EdgeInsets.fromLTRB(
+                        20.0,
+                        12.0,
+                        20.0,
+                        90.0,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,10 +313,6 @@ class _WeaknessTrackerScreenState extends State<WeaknessTrackerScreen> {
                 ),
               ),
             ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.menu_rounded, color: _darkText, size: 28),
-            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
         ],
       ),

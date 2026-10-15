@@ -1,0 +1,31 @@
+name: Sync Project to Google Drive
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Combine Code, Figma SVGs, and Instructions
+        run: |
+          echo "=== DESIGN INSTRUCTIONS ===" > combined_project.txt
+          cat instructions.txt >> combined_project.txt || echo "No special instructions provided." >> combined_project.txt
+          
+          echo -e "\n=== FIGMA LAYOUT VECTOR (SVG) ===" >> combined_project.txt
+          cat design_assets/login_mockup.svg >> combined_project.txt || echo "No SVG mockup found." >> combined_project.txt
+
+          echo -e "\n=== CURRENT LIVE DART CODE ===" >> combined_project.txt
+          cat lib/main.dart >> combined_project.txt
+
+      - name: Upload to Google Drive
+        uses: adityassarkar/upload-to-google-drive@v2
+        with:
+          credentials: ${{ secrets.DRIVE_CREDENTIALS }}
+          filename: combined_project.txt
+          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
+          overwrite: true

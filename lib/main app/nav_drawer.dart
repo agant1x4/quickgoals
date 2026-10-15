@@ -1,207 +1,146 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../main app/dashboard_phone.dart';
-import '../main app/pomodoro.dart';
-import '../main app/settings.dart';
-import '../main app/review.dart'; // Calendar Schedule Page
-import '../main app/weakness_tracker.dart'; // Strength & Weakness Tracker
-import '../models/task_models.dart';
 
-class AppMenuDrawer extends StatelessWidget {
-  final List<SubjectTaskData>? userSubjects;
+class FloatingNavBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  final VoidCallback? onAddPressed;
 
-  const AppMenuDrawer({super.key, this.userSubjects});
+  const FloatingNavBar({
+    super.key,
+    required this.currentIndex,
+    required this.onTap,
+    this.onAddPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final cleanSubjects = userSubjects ?? const [];
-    final screenWidth = MediaQuery.of(context).size.width;
+    // Navigation items directly matching your mockup design
+    final navItems = const [
+      Icons.dashboard_rounded, // 0: Dashboard
+      Icons.timer_rounded, // 1: Focus Timer
+      Icons.psychology_rounded, // 2: Weakness Tracker
+      Icons.calendar_view_day, // 3: Calendar / Schedule
+      Icons.settings_rounded, // 4: Settings
+    ];
 
-    // Responsive width clamping
-    final drawerWidth = (screenWidth * 0.75).clamp(280.0, 360.0);
-
-    return SizedBox(
-      width: drawerWidth,
-      child: Material(
-        elevation: 16,
-        color: Colors.white,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(30.0),
-            bottomLeft: Radius.circular(30.0),
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // --- HEADER ROW ---
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24.0,
-                  vertical: 16.0,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Menu',
-                      style: GoogleFonts.quicksand(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF2D3B55),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Row(
+          children: [
+            // --- MAIN FROSTED NAVIGATION CAPSULE ---
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(36.0),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
+                  child: Container(
+                    height: 64,
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          const Color.fromARGB(
+                            255,
+                            255,
+                            255,
+                            255,
+                          ).withOpacity(0.75),
+                          const Color.fromARGB(
+                            255,
+                            255,
+                            255,
+                            255,
+                          ).withOpacity(0.75),
+                        ],
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.close_rounded,
-                        color: Color(0xFF2D3B55),
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1, color: Color(0xFFEFEFEF)),
+                      borderRadius: BorderRadius.circular(36.0),
 
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 20.0,
-                  ),
-                  children: [
-                    // Link 1: Dashboard
-                    _buildMenuTile(
-                      context,
-                      icon: Icons.grid_view_rounded,
-                      title: 'Dashboard',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const DashboardScreen(),
-                          ),
-                        );
-                      },
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color.fromARGB(
+                            255,
+                            0,
+                            0,
+                            0,
+                          ).withOpacity(0.06),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: List.generate(navItems.length, (index) {
+                        final isSelected = index == currentIndex;
 
-                    // Link 2: Pomodoro Timer
-                    _buildMenuTile(
-                      context,
-                      icon: Icons.timer_outlined,
-                      title: 'Focus Timer',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                PomodoroPage(userSubjects: cleanSubjects),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Link 3: Weakness & Strength Tracker
-                    _buildMenuTile(
-                      context,
-                      icon: Icons.insights_rounded,
-                      title: 'Weakness Tracker',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => WeaknessTrackerScreen(
-                              userSubjects: cleanSubjects,
+                        return GestureDetector(
+                          onTap: () => onTap(index),
+                          behavior: HitTestBehavior.opaque,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeOutCubic,
+                            width: isSelected ? 56 : 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFFB2C4F6)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(22.0),
+                            ),
+                            child: Center(
+                              child: Icon(
+                                navItems[index],
+                                size: 24,
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xFF222222),
+                              ),
                             ),
                           ),
                         );
-                      },
+                      }),
                     ),
-                    const SizedBox(height: 12),
+                  ),
+                ),
+              ),
+            ),
 
-                    // Link 4: Calendar Schedule
-                    _buildMenuTile(
-                      context,
-                      icon: Icons.calendar_month_rounded,
-                      title: 'Calendar',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                ReviewPage(userSubjects: cleanSubjects),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 12),
+            const SizedBox(width: 12),
 
-                    // Link 5: Settings
-                    _buildMenuTile(
-                      context,
-                      icon: Icons.settings_rounded,
-                      title: 'Settings',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SettingsPage(),
-                          ),
-                        );
-                      },
+            // --- SEPARATE QUICK ADD BUTTON (+) ---
+            GestureDetector(
+              onTap: onAddPressed,
+              child: Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFB766),
+                  borderRadius: BorderRadius.circular(24.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color.fromARGB(
+                        255,
+                        5,
+                        5,
+                        5,
+                      ).withOpacity(0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: const Color(0xFFF7F9FC),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-            child: Row(
-              children: [
-                Icon(icon, color: const Color(0xFF2D3B55), size: 24),
-                const SizedBox(width: 16),
-                Text(
-                  title,
-                  style: GoogleFonts.quicksand(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF2D3B55),
-                  ),
+                child: const Icon(
+                  Icons.add_rounded,
+                  size: 32,
+                  color: Colors.white,
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

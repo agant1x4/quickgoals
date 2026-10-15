@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'main app/auth.dart'; // Import your new Authorization view
+
+// Imports mapped directly to your project structure
+import 'main app/auth.dart';
 
 void main() async {
-  // Required to ensure plugin services are initialized before runApp
+  // Required to ensure plugin services like SharedPreferences are initialized before runApp
   WidgetsFlutterBinding.ensureInitialized();
 
   final prefs = await SharedPreferences.getInstance();
@@ -23,9 +26,14 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'QuickGoals',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(scaffoldBackgroundColor: Colors.white),
-      // Directs everyone through the secure authorization gate screen first
-      home: AuthScreen(),
+      theme: ThemeData(
+        scaffoldBackgroundColor: Colors.white,
+        textTheme: GoogleFonts.quicksandTextTheme(Theme.of(context).textTheme),
+      ),
+
+      // Route flow: Launches into AuthScreen first.
+      home: const AuthScreen(),
+      // If user is onboarding for the first time, show intro wizard, otherwise go to MainShell.
     );
   }
 }

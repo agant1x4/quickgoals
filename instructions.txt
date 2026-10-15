@@ -1,0 +1,13 @@
+This is a Bug Fix:
+
+Main bug : 
+The task_pill_card in review.dart isnt displaying fully per each day 
+
+Secondary bugs that my be causign main bug:
+- Too many task bein pulled through the API 
+- No filters 
+- Tasks that have been completed on moodle displaying in the interface 
+
+Proposed fixes: 
+- Possibly update the api moodle service file so it is mroe robust and also pulls lessons while removing completed tasks 
+- The rest you have to find what is causing the bug of shrinked task_pill_cards I am not sure why it does this so i was just speculating the causes i need you to find the cause and solution 

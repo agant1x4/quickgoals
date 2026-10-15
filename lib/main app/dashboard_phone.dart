@@ -7,7 +7,7 @@ import '../widgets/geometry.dart';
 import '../widgets/task_config_sheet.dart';
 import '../algorithms/sorting_engine.dart';
 import 'pomodoro.dart';
-import 'nav_drawer.dart';
+import 'nav_drawer.dart'; // Imports FloatingNavBar
 
 void main() {
   runApp(const QuickGoalsApp());
@@ -42,6 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String _currentStrategy = 'Ice Cream';
   List<SubjectTaskData> _userSubjects = [];
   SubjectTaskData? _selectedSidePanelSubject;
+  int _currentNavIndex = 0; // Active nav bar index
 
   @override
   void initState() {
@@ -110,11 +111,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   int _calculateTasksCompletedToday() {
     int total = 0;
-    final now = DateTime.now();
     for (var subject in _userSubjects) {
       for (var task in subject.taskList) {
         if (task.isCompleted) {
-          // If completion date tracking exists or general completed count
           total++;
         }
       }
@@ -131,7 +130,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       }
     }
-    return totalMins > 0 ? totalMins : 45; // Default encouraging sample metric
+    return totalMins > 0 ? totalMins : 45;
   }
 
   @override
@@ -158,19 +157,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      endDrawer: AppMenuDrawer(userSubjects: _userSubjects),
+      extendBody: true, // Enables glass blur underneath floating bar
       body: SafeArea(
+        bottom: false,
         child: Stack(
           children: [
             SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24.0,
-                vertical: 20.0,
+              padding: const EdgeInsets.only(
+                left: 24.0,
+                right: 24.0,
+                top: 20.0,
+                bottom: 110.0, // Ensures content clears the bottom nav bar
               ),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start, // Left aligned layout fix
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // --- HEADER VIEW ---
                   Row(
@@ -215,20 +216,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               size: 18,
                               color: Colors.black,
                             ),
-                          ),
-                          const SizedBox(width: 14),
-                          Builder(
-                            builder: (innerContext) {
-                              return GestureDetector(
-                                onTap: () =>
-                                    Scaffold.of(innerContext).openEndDrawer(),
-                                child: const Icon(
-                                  Icons.menu,
-                                  size: 28,
-                                  color: Colors.black,
-                                ),
-                              );
-                            },
                           ),
                         ],
                       ),
@@ -563,7 +550,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   // GREEN & BLUE STATS ROW
                   Row(
                     children: [
-                      // GREEN CARD: Tasks Completed Today
                       Expanded(
                         child: Container(
                           height: 140,
@@ -624,7 +610,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(width: 14),
 
-                      // BLUE CARD: Pomodoro Focus Time
                       Expanded(
                         child: Container(
                           height: 140,
@@ -687,7 +672,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 14),
 
-                  // BROWN CARD: Weekly Tasks Completed Chart
+                  // BROWN CARD
                   Container(
                     height: 150,
                     padding: const EdgeInsets.all(18),
@@ -720,7 +705,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ],
                         ),
                         const Spacer(),
-                        // Dynamic Mini Bar Graph
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           crossAxisAlignment: CrossAxisAlignment.end,

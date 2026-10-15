@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:quickgoals_flutter/main%20app/main_shell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dashboard_phone.dart'; // Ensure this contains your actual DashboardScreen and SubjectTaskData definition
+import 'main_shell.dart'; // Ensure this contains your actual DashboardScreen and SubjectTaskData definition
 import '../models/task_models.dart';
 
 void main() {
@@ -767,9 +768,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               if (mounted) {
                 Navigator.pushAndRemoveUntil(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const DashboardScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const MainShell()),
                   (route) => false,
                 );
 

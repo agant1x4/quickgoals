@@ -22,7 +22,6 @@ class ReviewPage extends StatefulWidget {
 enum CalendarViewScope { day, week, month }
 
 class _ReviewPageState extends State<ReviewPage> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final CalendarEngine _calendarEngine = CalendarEngine(
     startHour: 4,
     endHour: 23,
@@ -30,6 +29,7 @@ class _ReviewPageState extends State<ReviewPage> {
   );
   late final ScrollController _timelineScrollController;
 
+  int _currentNavIndex = 3; // Defaults to index 3 (Calendar/Schedule)
   bool _isLoading = true;
   CalendarViewScope _currentView = CalendarViewScope.day;
   DateTime _selectedDate = DateTime.now();
@@ -443,9 +443,18 @@ class _ReviewPageState extends State<ReviewPage> {
     final bool isTablet = screenWidth >= 700;
 
     return Scaffold(
-      key: _scaffoldKey,
       backgroundColor: Colors.white,
-      endDrawer: AppMenuDrawer(userSubjects: _activeSubjects),
+      bottomNavigationBar: FloatingNavBar(
+        currentIndex: _currentNavIndex,
+        onTap: (index) {
+          setState(() {
+            _currentNavIndex = index;
+          });
+        },
+        onAddPressed: () {
+          // Add task action
+        },
+      ),
       body: SafeArea(
         child: _isLoading
             ? const Center(
@@ -597,26 +606,13 @@ class _ReviewPageState extends State<ReviewPage> {
   Widget _buildHeaderBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            "Calendar",
-            style: GoogleFonts.quicksand(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF1E293B),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.menu_rounded,
-              size: 28,
-              color: Color(0xFF1E293B),
-            ),
-            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-          ),
-        ],
+      child: Text(
+        "Calendar",
+        style: GoogleFonts.quicksand(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF1E293B),
+        ),
       ),
     );
   }
@@ -766,7 +762,7 @@ class _ReviewPageState extends State<ReviewPage> {
     return SingleChildScrollView(
       controller: _timelineScrollController,
       physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 100),
+      padding: const EdgeInsets.only(bottom: 140),
       child: SizedBox(
         height: _calendarEngine.totalCanvasHeight,
         child: Stack(
