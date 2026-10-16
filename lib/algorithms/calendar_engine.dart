@@ -22,11 +22,13 @@ class CalendarEngine {
   final int startHour; // 4 (4:00 AM)
   final int endHour; // 23 (11:00 PM)
   final double hourHeight; // 72.0 px per hour
+  final double dailyCapacityCap; // 30.0 default soft cap
 
   CalendarEngine({
     this.startHour = 4,
     this.endHour = 23,
     this.hourHeight = 72.0,
+    this.dailyCapacityCap = 30.0,
   });
 
   double get totalCanvasHeight => (endHour - startHour + 1) * hourHeight;
@@ -69,7 +71,7 @@ class CalendarEngine {
     return next;
   }
 
-  /// Calculates effective load considering deadline proximity (urgency multiplier)
+  /// Calculates effective load incorporating urgency multipliers based on deadline proximity
   double getEffectiveTaskLoad(TaskItem task) {
     double baseLoad = task.cognitiveLoad;
     final dueDate = task.dueDate;
@@ -77,13 +79,16 @@ class CalendarEngine {
       final difference = dueDate.difference(DateTime.now());
       final hoursUntilDue = difference.inHours;
       if (hoursUntilDue >= 0 && hoursUntilDue <= 24) {
-        baseLoad *= 1.25; // Urgency boost
+        baseLoad *= 2.0; // Critical urgency boost (<= 24 hrs)
+      } else if (hoursUntilDue > 24 && hoursUntilDue <= 48) {
+        baseLoad *= 1.5; // Urgent boost (<= 48 hrs)
+      } else if (hoursUntilDue > 48 && hoursUntilDue <= 72) {
+        baseLoad *= 1.25; // Impending boost (<= 72 hrs)
       }
     }
     return baseLoad;
   }
 
-  /// Fallback duration retriever (defaults strictly to 30 mins)
   int _getSafeDurationMinutes(TaskItem task) {
     final raw = task.durationMinutes;
     return (raw > 0) ? raw : 30;
@@ -95,7 +100,7 @@ class CalendarEngine {
   ) {
     List<ScheduledTaskPosition> positions = [];
 
-    // 1. Collect all active tasks assigned to the target date
+    // 1. Collect all active tasks assigned to the target date, categorized by subject
     Map<SubjectTaskData, List<TaskItem>> subjectTasksMap = {};
     int totalTasksCount = 0;
 
@@ -106,6 +111,13 @@ class CalendarEngine {
       }).toList();
 
       if (targetTasks.isNotEmpty) {
+        // Sort subject tasks by urgency / effective load
+        targetTasks.sort((a, b) {
+          final loadA = getEffectiveTaskLoad(a);
+          final loadB = getEffectiveTaskLoad(b);
+          return loadB.compareTo(loadA);
+        });
+
         subjectTasksMap[subject] = targetTasks;
         totalTasksCount += targetTasks.length;
       }
@@ -113,11 +125,11 @@ class CalendarEngine {
 
     if (totalTasksCount == 0) return [];
 
-    // 2. Proportional slot allocation and interleave queuing
+    // 2. Proportional slot allocation and interleave queuing across subjects
     List<Map<String, dynamic>> interleavedQueue = [];
     List<SubjectTaskData> activeSubjects = subjectTasksMap.keys.toList();
 
-    // Round-robin interleave weighted by proportional task count
+    // Weighted round-robin interleave giving proportional slots to busier subjects
     bool tasksRemaining = true;
     Map<SubjectTaskData, int> indices = {for (var s in activeSubjects) s: 0};
 
@@ -134,22 +146,39 @@ class CalendarEngine {
       }
     }
 
-    // 3. Layout allocation (8:00 AM - 6:00 PM primary, 6:00 PM - 11:00 PM overflow)
+    // 3. Layout allocation (8:00 AM - 6:00 PM primary range, 6:00 PM - 11:00 PM evening spillover)
     int primaryStartMinute = (8 - startHour) * 60; // 8:00 AM offset
     int primaryEndMinute = (18 - startHour) * 60; // 6:00 PM offset
     int currentMinute = primaryStartMinute;
 
     List<Map<String, dynamic>> overflowRolloverTasks = [];
+    double accumulatedDailyLoad = 0.0;
 
     for (var item in interleavedQueue) {
       final task = item['task'] as TaskItem;
       final subject = item['subject'] as SubjectTaskData;
-
-      // Enforce 30-minute default fallback
+      final double effectiveLoad = getEffectiveTaskLoad(task);
       final int duration = _getSafeDurationMinutes(task);
 
+      // Check daily capacity soft cap (30.0)
+      if (accumulatedDailyLoad + effectiveLoad > dailyCapacityCap) {
+        final lowerType = task.type.toLowerCase();
+        final isRolloverEligible =
+            lowerType.contains('lesson') ||
+            lowerType.contains('read') ||
+            lowerType.contains('quiz');
+
+        // Only rollover lessons/readings/quizzes (NOT assignments or exams)
+        if (isRolloverEligible) {
+          overflowRolloverTasks.add(item);
+          continue;
+        }
+      }
+
+      accumulatedDailyLoad += effectiveLoad;
+
       if (currentMinute + duration <= primaryEndMinute) {
-        // Fits within 8 AM - 6 PM
+        // Fits within 8 AM - 6 PM primary window
         final top = (currentMinute / 60.0) * hourHeight;
         final height = (duration / 60.0) * hourHeight;
 
@@ -165,7 +194,7 @@ class CalendarEngine {
 
         currentMinute += duration + 15; // 15-minute padding between slots
       } else if (currentMinute + duration <= (endHour - startHour) * 60) {
-        // Fits in late evening slot (6 PM - 11 PM)
+        // Fits in late evening slot (6 PM - 11 PM) leaving room for class/breaks/sleep
         final top = (currentMinute / 60.0) * hourHeight;
         final height = (duration / 60.0) * hourHeight;
 
@@ -182,7 +211,7 @@ class CalendarEngine {
 
         currentMinute += duration + 15;
       } else {
-        // Exceeds day capacity -> Check for rollover eligibility
+        // Exceeds canvas span
         final lowerType = task.type.toLowerCase();
         final isRolloverEligible =
             lowerType.contains('lesson') ||
@@ -192,7 +221,7 @@ class CalendarEngine {
         if (isRolloverEligible) {
           overflowRolloverTasks.add(item);
         } else {
-          // Force place strict deadlines (Assignments/Exams) at end of canvas
+          // Force place strict deadlines (Assignments/Exams) at the end of the canvas
           final top = ((endHour - startHour - 1) * hourHeight);
           positions.add(
             ScheduledTaskPosition(
@@ -208,7 +237,7 @@ class CalendarEngine {
       }
     }
 
-    // 4. Move rollover tasks to the next weekday
+    // 4. Move overflow rollover tasks to the next weekday
     if (overflowRolloverTasks.isNotEmpty) {
       final nextWeekday = _getNextWeekday(targetDate);
       for (var overflow in overflowRolloverTasks) {

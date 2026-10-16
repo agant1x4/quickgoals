@@ -33,7 +33,7 @@ class _ReviewPageState extends State<ReviewPage> {
   bool _isLoading = true;
   CalendarViewScope _currentView = CalendarViewScope.day;
   DateTime _selectedDate = DateTime.now();
-  double _dailySoftCap = 30.0;
+  final double _dailySoftCap = 30.0;
 
   List<SubjectTaskData> _activeSubjects = [];
   _CalendarTaskWrapper? _selectedTask;
@@ -79,7 +79,7 @@ class _ReviewPageState extends State<ReviewPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            "⚠️ Daily workload capacity warning (${currentLoad.toStringAsFixed(1)} / ${_dailySoftCap.toInt()} Load). Consider spreading out tasks.",
+            "⚠️ Daily workload soft cap exceeded (${currentLoad.toStringAsFixed(1)} / ${_dailySoftCap.toInt()} Load). Placement allowed.",
             style: GoogleFonts.quicksand(fontWeight: FontWeight.bold),
           ),
           backgroundColor: const Color(0xFFE53935),
@@ -451,9 +451,7 @@ class _ReviewPageState extends State<ReviewPage> {
             _currentNavIndex = index;
           });
         },
-        onAddPressed: () {
-          // Add task action
-        },
+        onAddPressed: () {},
       ),
       body: SafeArea(
         child: _isLoading
