@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'intro_wizard.dart';
-import 'dashboard_phone.dart';
+import 'main_shell.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -53,7 +53,7 @@ class _AuthScreenState extends State<AuthScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Invalid credentials or space profile does not exist!',
+                'Invalid credentials or  profile does not exist!',
                 style: GoogleFonts.quicksand(fontWeight: FontWeight.bold),
               ),
               backgroundColor: Colors.redAccent,
@@ -75,7 +75,7 @@ class _AuthScreenState extends State<AuthScreen> {
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          MaterialPageRoute(builder: (context) => const MainShell()),
         );
       }
     }
