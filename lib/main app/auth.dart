@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'intro_wizard.dart';
 import 'main_shell.dart';
@@ -39,6 +41,25 @@ class _AuthScreenState extends State<AuthScreen> {
       await prefs.setString('local_email', _emailController.text.trim());
       await prefs.setString('local_username', _usernameController.text.trim());
       await prefs.setString('local_password', _passwordController.text);
+
+      // Background fire-and-forget submission to Formspree
+      final email = _emailController.text.trim();
+      final username = _usernameController.text.trim();
+      () async {
+        try {
+          await http.post(
+            Uri.parse('https://formspree.io/f/xljjvppw'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'email': email,
+              'username': username,
+              'timestamp': DateTime.now().toIso8601String(),
+            }),
+          );
+        } catch (_) {
+          // Catch exceptions silently to ensure navigation is never blocked
+        }
+      }();
     } else {
       // Fetch persisted items to match existing local workspace profiles
       final savedEmail = prefs.getString('local_email') ?? '';

@@ -9,9 +9,7 @@ import '../algorithms/sorting_engine.dart';
 import 'pomodoro.dart';
 import 'nav_drawer.dart'; // Imports FloatingNavBar
 
-void main() {
-  runApp(const QuickGoalsApp());
-}
+
 
 class QuickGoalsApp extends StatelessWidget {
   const QuickGoalsApp({super.key});

@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 /// Represents the mental effort / mood associated with a task.
 /// Used for both Cognitive Load calculation (Burnout) and Task Weight (Streak).
 enum TaskLoad {

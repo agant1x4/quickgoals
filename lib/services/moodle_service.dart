@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task_models.dart';
@@ -451,5 +451,177 @@ class MoodleService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('moodle_token');
     await prefs.remove(_lastSyncKey);
+  }
+
+  /// Fetches enrolled courses directly from Moodle API, pulls all pending activities,
+  /// maps them into SubjectTaskData instances, and assigns vibrant pastel colors.
+  Future<List<SubjectTaskData>> fetchEnrolledSubjects({
+    List<Color>? palette,
+  }) async {
+    final colors = palette ??
+        const [
+          Color(0xFFFFB3BA),
+          Color(0xFFFFDFBA),
+          Color(0xFFFFFFBA),
+          Color(0xFFBFFCC6),
+          Color(0xFFB3F6F6),
+          Color(0xFFBAE1FF),
+          Color(0xFFD5AAFF),
+          Color(0xFFF5B3F7),
+          Color(0xFFE8EAED),
+          Color(0xFFF1C0B9),
+          Color(0xFFC7CEEA),
+          Color(0xFFE2F0CB),
+        ];
+
+    List<SubjectTaskData> subjects = [];
+    final rawActivities = await fetchMoodleActivities();
+
+    // Group activities by course title
+    final Map<String, List<TaskItem>> grouped = {};
+    for (var act in rawActivities) {
+      final course = (act['course'] as String? ?? 'General').trim();
+      if (!grouped.containsKey(course)) {
+        grouped[course] = [];
+      }
+      grouped[course]!.add(
+        TaskItem(
+          id: act['id'] ?? 'moodle_${DateTime.now().microsecondsSinceEpoch}',
+          title: act['title'] ?? 'Task',
+          type: act['type'] ?? 'Lesson',
+          description: act['description'] ?? '',
+          dueDate: act['dueDate'] as DateTime?,
+          durationMinutes: act['durationMinutes'] as int? ?? 30,
+          load: act['type'] == 'Assignment'
+              ? TaskLoad.stressed
+              : (act['type'] == 'Quiz' ? TaskLoad.meh : TaskLoad.good),
+          subjectName: course,
+        ),
+      );
+    }
+
+    if (grouped.isEmpty) {
+      return generateFallbackSubjects(colors);
+    }
+
+    int colorIndex = 0;
+    grouped.forEach((courseName, tasks) {
+      subjects.add(
+        SubjectTaskData(
+          name: courseName,
+          customName: courseName,
+          subjectColor: colors[colorIndex % colors.length],
+          lessonDifficulty: 3,
+          quizDifficulty: 3,
+          assignmentDifficulty: 3,
+          taskList: tasks,
+        ),
+      );
+      colorIndex++;
+    });
+
+    return subjects;
+  }
+
+  /// Fallback curated subjects with rich sample tasks for offline mode / guest onboarding
+  static List<SubjectTaskData> generateFallbackSubjects([List<Color>? palette]) {
+    final colors = palette ??
+        const [
+          Color(0xFFFFB3BA),
+          Color(0xFFFFDFBA),
+          Color(0xFFFFFFBA),
+          Color(0xFFBFFCC6),
+          Color(0xFFB3F6F6),
+          Color(0xFFBAE1FF),
+          Color(0xFFD5AAFF),
+          Color(0xFFF5B3F7),
+          Color(0xFFE8EAED),
+          Color(0xFFF1C0B9),
+          Color(0xFFC7CEEA),
+          Color(0xFFE2F0CB),
+        ];
+
+    final now = DateTime.now();
+    return [
+      SubjectTaskData(
+        name: 'Mathematics',
+        customName: 'Pure Mathematics',
+        subjectColor: colors[0],
+        lessonDifficulty: 4,
+        quizDifficulty: 4,
+        assignmentDifficulty: 4,
+        examDate: DateTime(now.year, now.month, now.day + 18),
+        taskList: [
+          TaskItem(
+            id: 'mock_math_1',
+            title: 'Vector Calculus Practice Problem Set',
+            type: 'Assignment',
+            description: 'Complete exercises 4.1 to 4.5. Upload PDF scan.',
+            dueDate: DateTime(now.year, now.month, now.day + 2, 23, 59),
+            durationMinutes: 60,
+            load: TaskLoad.stressed,
+            subjectName: 'Mathematics',
+          ),
+          TaskItem(
+            id: 'mock_math_2',
+            title: 'Quiz 2: Differential Equations',
+            type: 'Quiz',
+            dueDate: DateTime(now.year, now.month, now.day + 5, 23, 59),
+            durationMinutes: 30,
+            load: TaskLoad.meh,
+            subjectName: 'Mathematics',
+          ),
+        ],
+      ),
+      SubjectTaskData(
+        name: 'Computer Science',
+        customName: 'CS: Data Structures',
+        subjectColor: colors[5],
+        lessonDifficulty: 3,
+        quizDifficulty: 3,
+        assignmentDifficulty: 4,
+        examDate: DateTime(now.year, now.month, now.day + 24),
+        taskList: [
+          TaskItem(
+            id: 'mock_cs_1',
+            title: 'Lesson 3: Binary Search Trees',
+            type: 'Lesson',
+            dueDate: DateTime(now.year, now.month, now.day + 1, 23, 59),
+            durationMinutes: 35,
+            load: TaskLoad.good,
+            subjectName: 'Computer Science',
+          ),
+          TaskItem(
+            id: 'mock_cs_2',
+            title: 'Programming Lab 1: Tree Traversals',
+            type: 'Assignment',
+            dueDate: DateTime(now.year, now.month, now.day + 4, 23, 59),
+            durationMinutes: 75,
+            load: TaskLoad.melting,
+            subjectName: 'Computer Science',
+          ),
+        ],
+      ),
+      SubjectTaskData(
+        name: 'Physics',
+        customName: 'Physics Mechanics',
+        subjectColor: colors[3],
+        lessonDifficulty: 3,
+        quizDifficulty: 4,
+        assignmentDifficulty: 3,
+        examDate: DateTime(now.year, now.month, now.day + 12),
+        taskList: [
+          TaskItem(
+            id: 'mock_phys_1',
+            title: 'Newtonian Dynamics Summary',
+            type: 'Lesson',
+            dueDate: DateTime(now.year, now.month, now.day + 3, 23, 59),
+            durationMinutes: 25,
+            load: TaskLoad.good,
+            subjectName: 'Physics',
+          ),
+        ],
+      ),
+    ];
   }
 }

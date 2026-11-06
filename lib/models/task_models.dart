@@ -5,7 +5,7 @@ import 'task_load.dart';
 class TaskItem {
   final String id;
   String title;
-  String type; // 'Lesson', 'Quiz', 'Assignment'
+  String type; // 'Lesson', 'Quiz', 'Assignment', 'Exam'
   String description;
   int difficulty; // 1 to 5
   TaskLoad load;
@@ -13,6 +13,8 @@ class TaskItem {
   bool isCompleted;
   int durationMinutes;
   String? subjectName;
+  bool isExam;
+  String? customName;
 
   TaskItem({
     required this.id,
@@ -25,6 +27,8 @@ class TaskItem {
     this.isCompleted = false,
     this.durationMinutes = 30,
     this.subjectName,
+    this.isExam = false,
+    this.customName,
   });
 
   /// Single Task Cognitive Load (for Burnout Soft Cap)
@@ -32,6 +36,12 @@ class TaskItem {
 
   /// Task Weight (for Daily Streak Calculation)
   double get streakWeight => difficulty + (load.multiplier * 2.0);
+
+  /// Display title giving precedence to optional custom alias
+  String get displayTitle =>
+      (customName != null && customName!.trim().isNotEmpty)
+          ? customName!
+          : title;
 
   TaskItem copyWith({
     String? id,
@@ -44,6 +54,8 @@ class TaskItem {
     bool? isCompleted,
     int? durationMinutes,
     String? subjectName,
+    bool? isExam,
+    String? customName,
   }) {
     return TaskItem(
       id: id ?? this.id,
@@ -56,6 +68,8 @@ class TaskItem {
       isCompleted: isCompleted ?? this.isCompleted,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       subjectName: subjectName ?? this.subjectName,
+      isExam: isExam ?? this.isExam,
+      customName: customName ?? this.customName,
     );
   }
 
@@ -71,6 +85,8 @@ class TaskItem {
       'isCompleted': isCompleted,
       'durationMinutes': durationMinutes,
       'subjectName': subjectName,
+      'isExam': isExam,
+      'customName': customName,
     };
   }
 
@@ -85,10 +101,12 @@ class TaskItem {
         (e) => e.name == map['load'],
         orElse: () => TaskLoad.good,
       ),
-      dueDate: map['dueDate'] != null ? DateTime.parse(map['dueDate']) : null,
+      dueDate: map['dueDate'] != null ? DateTime.tryParse(map['dueDate']) : null,
       isCompleted: map['isCompleted'] ?? false,
       durationMinutes: map['durationMinutes'] ?? 30,
       subjectName: map['subjectName'],
+      isExam: map['isExam'] ?? false,
+      customName: map['customName'],
     );
   }
 }
@@ -97,6 +115,9 @@ class TaskItem {
 class SubjectTaskData {
   final String name;
   final Color subjectColor;
+  String? customName; // Optional user-facing rename / alias
+  DateTime? examDate; // Critical exam / target deadline
+  String? preferredStudyWindow; // e.g. 'Morning', 'Afternoon', 'Evening'
 
   int lessonDifficulty;
   int quizDifficulty;
@@ -115,6 +136,9 @@ class SubjectTaskData {
   SubjectTaskData({
     required this.name,
     required this.subjectColor,
+    this.customName,
+    this.examDate,
+    this.preferredStudyWindow,
     this.lessonDifficulty = 3,
     this.quizDifficulty = 3,
     this.assignmentDifficulty = 3,
@@ -125,6 +149,12 @@ class SubjectTaskData {
     this.lastCompletedDate,
     List<TaskItem>? taskList,
   }) : taskList = taskList ?? [];
+
+  /// User-friendly display name falling back to system/Moodle course name
+  String get displayName =>
+      (customName != null && customName!.trim().isNotEmpty)
+          ? customName!
+          : name;
 
   void registerTaskCompletion() {
     final now = DateTime.now();
@@ -186,6 +216,9 @@ class SubjectTaskData {
     return {
       'name': name,
       'subjectColor': subjectColor.toARGB32(),
+      'customName': customName,
+      'examDate': examDate?.toIso8601String(),
+      'preferredStudyWindow': preferredStudyWindow,
       'lessonDifficulty': lessonDifficulty,
       'quizDifficulty': quizDifficulty,
       'assignmentDifficulty': assignmentDifficulty,
@@ -202,6 +235,9 @@ class SubjectTaskData {
     return SubjectTaskData(
       name: map['name'] ?? '',
       subjectColor: Color(map['subjectColor'] ?? 0xFFFFB75E),
+      customName: map['customName'],
+      examDate: map['examDate'] != null ? DateTime.tryParse(map['examDate']) : null,
+      preferredStudyWindow: map['preferredStudyWindow'],
       lessonDifficulty: map['lessonDifficulty'] ?? 3,
       quizDifficulty: map['quizDifficulty'] ?? 3,
       assignmentDifficulty: map['assignmentDifficulty'] ?? 3,
@@ -210,13 +246,54 @@ class SubjectTaskData {
       currentStreak: map['currentStreak'] ?? 0,
       bestStreak: map['bestStreak'] ?? 0,
       lastCompletedDate: map['lastCompletedDate'] != null
-          ? DateTime.parse(map['lastCompletedDate'])
+          ? DateTime.tryParse(map['lastCompletedDate'])
           : null,
       taskList: map['taskList'] != null
           ? List<TaskItem>.from(
               (map['taskList'] as List).map((t) => TaskItem.fromMap(t)),
             )
           : [],
+    );
+  }
+}
+
+// --- PRODUCTIVITY PROFILE DATA MODEL ---
+class ProductivityProfile {
+  final List<String> studyWindows;
+  final List<String> bestDays;
+  final String strategy;
+  final double dailyCapacityCap;
+  final String? studentArchetype;
+
+  const ProductivityProfile({
+    this.studyWindows = const ['Morning'],
+    this.bestDays = const ['Monday', 'Wednesday', 'Friday'],
+    this.strategy = 'Ice Cream',
+    this.dailyCapacityCap = 30.0,
+    this.studentArchetype,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'studyWindows': studyWindows,
+      'bestDays': bestDays,
+      'strategy': strategy,
+      'dailyCapacityCap': dailyCapacityCap,
+      'studentArchetype': studentArchetype,
+    };
+  }
+
+  factory ProductivityProfile.fromMap(Map<String, dynamic> map) {
+    return ProductivityProfile(
+      studyWindows: map['studyWindows'] != null
+          ? List<String>.from(map['studyWindows'])
+          : const ['Morning'],
+      bestDays: map['bestDays'] != null
+          ? List<String>.from(map['bestDays'])
+          : const ['Monday', 'Wednesday', 'Friday'],
+      strategy: map['strategy'] ?? 'Ice Cream',
+      dailyCapacityCap: (map['dailyCapacityCap'] as num?)?.toDouble() ?? 30.0,
+      studentArchetype: map['studentArchetype'],
     );
   }
 }
